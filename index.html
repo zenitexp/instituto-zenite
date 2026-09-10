@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-MZ">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instituto Zênite | Portal</title>
+  <meta name="description" content="Portal digital do Instituto Zênite">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#" onclick="showPage('home')">
+      <span class="brand-mark">Z</span>
+      <span><strong>Instituto Zênite</strong><small>Portal Académico</small></span>
+    </a>
+    <nav>
+      <button onclick="showPage('home')">Início</button>
+      <button onclick="showPage('inscricao')">Inscrição</button>
+      <button onclick="showPage('login')">Entrar</button>
+      <button class="admin-link" onclick="showPage('adminLogin')">Administração</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="home" class="page active">
+      <div class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow">EDUCAÇÃO • TECNOLOGIA • FUTURO</span>
+          <h1>Portal <span>Zênite</span></h1>
+          <p>Conectado hoje. Preparado para amanhã.</p>
+          <p class="muted">Uma plataforma digital para inscrições, acompanhamento académico, pagamentos, comunicação e gestão do Instituto Zênite.</p>
+          <div class="actions">
+            <button class="btn primary" onclick="showPage('inscricao')">Fazer inscrição</button>
+            <button class="btn ghost" onclick="showPage('login')">Entrar no portal</button>
+          </div>
+        </div>
+        <div class="hero-card">
+          <div class="orbit">Z</div>
+          <h3>Instituto Zênite</h3>
+          <p>Portal integrado de gestão escolar e acompanhamento do aluno.</p>
+          <div class="mini-stats"><span><b>2ª–12ª</b> Classes</span><span><b>24/7</b> Acesso</span></div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <span class="eyebrow">ÁREAS DO PORTAL</span>
+        <h2>Uma experiência académica organizada</h2>
+      </div>
+      <div class="feature-grid">
+        <article><div class="icon">01</div><h3>Inscrição digital</h3><p>Registo do aluno e escolha da classe e disciplinas.</p></article>
+        <article><div class="icon">02</div><h3>Acompanhamento</h3><p>Perfil, notas, calendário, histórico e situação financeira.</p></article>
+        <article><div class="icon">03</div><h3>Gestão administrativa</h3><p>Confirmação de matrícula, pagamentos, notas, dívidas e relatórios.</p></article>
+        <article><div class="icon">04</div><h3>Comunicação</h3><p>Notificações e avisos oficiais do Instituto Zênite.</p></article>
+      </div>
+    </section>
+
+    <section id="inscricao" class="page">
+      <div class="section-head compact"><span class="eyebrow">NOVA INSCRIÇÃO</span><h2>Ficha de inscrição</h2><p>Preencha os dados abaixo. Os campos marcados com * são obrigatórios.</p></div>
+      <form id="registrationForm" class="form-card">
+        <div class="form-section"><h3>Dados do aluno</h3>
+          <div class="form-grid">
+            <label>Nome *<input name="nome" required></label>
+            <label>Apelido *<input name="apelido" required></label>
+            <label>BI / Cédula *<input name="bi" required></label>
+            <label>Data de nascimento *<input type="date" name="dataNascimento" required></label>
+            <label>Província *<input name="provincia" required></label>
+            <label>Distrito *<input name="distrito" required></label>
+            <label>Telefone *<input name="telefone" required></label>
+            <label>WhatsApp<input name="whatsapp"></label>
+            <label>Email<input type="email" name="email"></label>
+          </div>
+        </div>
+        <div class="form-section"><h3>Encarregado de educação</h3>
+          <div class="form-grid">
+            <label>Nome do pai<input name="nomePai"></label>
+            <label>Nome da mãe<input name="nomeMae"></label>
+            <label>Nome do encarregado *<input name="nomeEncarregado" required></label>
+            <label>Telefone do encarregado *<input name="telefoneEncarregado" required></label>
+          </div>
+        </div>
+        <div class="form-section"><h3>Dados académicos</h3>
+          <div class="form-grid">
+            <label>Classe *<select id="classe" name="classe" required onchange="renderSubjects()"><option value="">Selecionar</option></select></label>
+            <label>Modalidade<select name="modalidade"><option>Explicação online</option><option>Outro</option></select></label>
+          </div>
+          <div id="subjectsBox" class="subjects"></div>
+        </div>
+        <button class="btn primary full" type="submit">Enviar inscrição</button>
+      </form>
+    </section>
+
+    <section id="login" class="page">
+      <div class="auth-wrap">
+        <form id="studentLogin" class="auth-card">
+          <span class="eyebrow">ÁREA DO ALUNO</span><h2>Entrar no Portal</h2>
+          <p class="muted">Use o e-mail de entrada e a senha fornecidos pelo Instituto.</p>
+          <label>Email de entrada<input id="loginEmail" type="email" required></label>
+          <label>Senha<input id="loginPassword" type="password" required></label>
+          <button class="btn primary full">Entrar</button>
+          <p class="helper">Ainda não tem inscrição? <button type="button" class="link-btn" onclick="showPage('inscricao')">Fazer inscrição</button></p>
+        </form>
+      </div>
+    </section>
+
+    <section id="adminLogin" class="page">
+      <div class="auth-wrap">
+        <form id="adminLoginForm" class="auth-card">
+          <span class="eyebrow">ADMINISTRAÇÃO</span><h2>Acesso administrativo</h2>
+          <label>Utilizador<input id="adminUser" required></label>
+          <label>Senha<input id="adminPass" type="password" required></label>
+          <button class="btn primary full">Aceder ao painel</button>
+          <p class="helper">Modo inicial: admin / admin123</p>
+        </form>
+      </div>
+    </section>
+
+    <section id="studentDashboard" class="page">
+      <div id="studentApp"></div>
+    </section>
+
+    <section id="adminDashboard" class="page">
+      <div id="adminApp"></div>
+    </section>
+  </main>
+
+  <footer><span>© <span id="year"></span> Instituto Zênite</span><span>Portal do Aluno • Gestão Académica</span></footer>
+  <script src="script.js"></script>
+</body>
+</html>
