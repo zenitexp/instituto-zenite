@@ -691,6 +691,133 @@ function logoutAdmin() {
   toast('Sessão terminada.');
 }
 
+/* ============================================
+   AÇÕES DE GESTÃO DE ALUNO (com modais bonitos)
+   ============================================ */
+
+async function confirmarMatricula(id) {
+  const ok = await confirmar(
+    'Confirmar matrícula?',
+    'O aluno terá acesso a todas as áreas académicas após esta ação.',
+    'success'
+  );
+  if (!ok) return;
+
+  try {
+    await api(`/admin/aluno/${id}/estado`, {
+      method: 'POST',
+      body: JSON.stringify({ status: 'Matrícula confirmada' })
+    });
+    toast('Matrícula confirmada com sucesso!', 'success');
+    await renderAdmin();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function anularMatricula(id) {
+  const ok = await confirmar(
+    'Anular matrícula?',
+    'O aluno perderá acesso às áreas académicas. Esta ação pode ser revertida.',
+    'error'
+  );
+  if (!ok) return;
+
+  try {
+    await api(`/admin/aluno/${id}/estado`, {
+      method: 'POST',
+      body: JSON.stringify({ status: 'Matrícula anulada' })
+    });
+    toast('Matrícula anulada.', 'warning');
+    await renderAdmin();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function editarDivida(id) {
+  const res = await pedirValores(
+    'Editar saldo negativo',
+    [{ label: 'Valor em dívida (MT)', tipo: 'number', valor: '0', placeholder: 'Ex: 500' }],
+    'warning'
+  );
+  if (!res || !res.botao) return;
+
+  try {
+    await api(`/admin/aluno/${id}/divida`, {
+      method: 'POST',
+      body: JSON.stringify({ amount: Number(res.valores[0]) || 0 })
+    });
+    toast('Dívida atualizada!', 'success');
+    await renderAdmin();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function registarPagamento(id) {
+  const res = await pedirValores(
+    'Registar pagamento',
+    [
+      { label: 'Valor (MT)', tipo: 'number', valor: '180', placeholder: 'Ex: 180' },
+      { label: 'Método', tipo: 'select', opcoes: ['M-Pesa', 'M-Kesh', 'E-Mola', 'Transferência', 'Dinheiro'] }
+    ],
+    'success'
+  );
+  if (!res || !res.botao) return;
+
+  try {
+    await api(`/admin/aluno/${id}/pagamento`, {
+      method: 'POST',
+      body: JSON.stringify({
+        amount: Number(res.valores[0]) || 0,
+        method: res.valores[1]
+      })
+    });
+    toast('Pagamento registado!', 'success');
+    await renderAdmin();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function verFormulario(id) {
+  const students = await api('/admin/alunos');
+  const s = students.find(x => x.id === id);
+  if (!s) return;
+
+  await modal({
+    titulo: `Formulário — ${s.nome} ${s.apelido}`,
+    tipo: 'info',
+    mensagem: `
+      <div style="display:grid;gap:8px;font-size:13px">
+        <div><b style="color:var(--gold2)">Nº do aluno:</b> ${esc(s.numero)}</div>
+        <div><b style="color:var(--gold2)">Nome completo:</b> ${esc(s.nome)} ${esc(s.apelido)}</div>
+        <div><b style="color:var(--gold2)">BI:</b> ${esc(s.bi)}</div>
+        <div><b style="color:var(--gold2)">Data de nascimento:</b> ${esc(s.data_nascimento)}</div>
+        <div><b style="color:var(--gold2)">Província/Distrito:</b> ${esc(s.provincia)} / ${esc(s.distrito)}</div>
+        <div><b style="color:var(--gold2)">Telefone:</b> ${esc(s.telefone)}</div>
+        <div><b style="color:var(--gold2)">WhatsApp:</b> ${esc(s.whatsapp || '—')}</div>
+        <div><b style="color:var(--gold2)">Email:</b> ${esc(s.email || '—')}</div>
+        <div><b style="color:var(--gold2)">Pai:</b> ${esc(s.nome_pai || '—')}</div>
+        <div><b style="color:var(--gold2)">Mãe:</b> ${esc(s.nome_mae || '—')}</div>
+        <div><b style="color:var(--gold2)">Encarregado:</b> ${esc(s.nome_encarregado)} (${esc(s.telefone_encarregado)})</div>
+        <div><b style="color:var(--gold2)">Classe:</b> ${esc(s.classe)}</div>
+        <div><b style="color:var(--gold2)">Modalidade:</b> ${esc(s.modalidade)}</div>
+        <div><b style="color:var(--gold2)">Disciplinas:</b> ${esc((s.disciplinas || []).join(', '))}</div>
+        <div><b style="color:var(--gold2)">Estado:</b> ${esc(s.status)}</div>
+      </div>`,
+    botoes: [{ texto: 'Fechar', tipo: 'primary', valor: true }]
+  });
+}
+
+async function excluirAluno(id) {
+  const ok = await confirmar(
+    'Excluir aluno?',
+    'Todos os dados (notas, pagamentos, dívidas e notificações) serão apagados permanentemente. Esta ação NÃO pode ser revertida.',
+    'error'
+  );
+  if (!ok) return;
+
+  try {
+    await api(`/admin/aluno/${id}`, { method: 'DELETE' });
+    toast('Aluno excluído.', 'success');
+    await renderAdmin();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
 /* ============ EXPORTS GLOBAIS ============ */
 window.showPage = showPage;
 window.renderSubjects = renderSubjects;
@@ -703,6 +830,16 @@ window.saveGrade = saveGrade;
 window.addCalendar = addCalendar;
 window.deleteCalendar = deleteCalendar;
 window.logoutAdmin = logoutAdmin;
+window.confirmarMatricula = confirmarMatricula;
+window.anularMatricula = anularMatricula;
+window.editarDivida = editarDivida;
+window.registarPagamento = registarPagamento;
+window.verFormulario = verFormulario;
+window.excluirAluno = excluirAluno;
+window.modal = modal;
+window.alertar = alertar;
+window.confirmar = confirmar;
+window.pedirValores
 
 /* ============ SESSÕES EXISTENTES ============ */
 if (sessionStorage.getItem('zenite_admin')) {
