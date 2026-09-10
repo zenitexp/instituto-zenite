@@ -1,3 +1,19 @@
+const API = 'https://seu-app.onrender.com'; // troque depois do deploy
+
+async function api(path, opts = {}) {
+  const token = sessionStorage.getItem('zenite_token');
+  const r = await fetch(API + path, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: 'Bearer ' + token } : {}),
+      ...(opts.headers || {})
+    }
+  });
+  if (!r.ok) throw new Error((await r.json()).erro || 'Erro');
+  return r.json();
+}
+
 /* Instituto Zênite — Portal Académico
    Arquitetura preparada para substituir o armazenamento local por Firebase/REST.
    Dados de demonstração são mantidos no navegador para o protótipo funcionar no Acode.
