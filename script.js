@@ -18,6 +18,203 @@ async function api(path, opts = {}) {
   return data;
 }
 
+/* ============================================
+   SISTEMA DE UI — Toasts e Modais
+   ============================================ */
+
+/* ---------- CONTAINER DE TOASTS ---------- */
+(function criarToastContainer() {
+  if (document.querySelector('.toast-container')) return;
+  const c = document.createElement('div');
+  c.className = 'toast-container';
+  document.body.appendChild(c);
+})();
+
+/* ---------- TOAST (Notificações) ---------- */
+function toast(msg, type = 'success', titulo = null, duracao = 4000) {
+  const icons = {
+    success: '✓',
+    error: '✕',
+    warning: '⚠',
+    info: 'ℹ'
+  };
+  const titulos = {
+    success: 'Sucesso',
+    error: 'Erro',
+    warning: 'Atenção',
+    info: 'Informação'
+  };
+
+  const container = document.querySelector('.toast-container');
+  const el = document.createElement('div');
+  el.className = `toast-item ${type}`;
+  el.innerHTML = `
+    <div class="toast-icon">${icons[type] || '•'}</div>
+    <div class="toast-content">
+      <div class="toast-title">${esc(titulo || titulos[type] || '')}</div>
+      <div class="toast-msg">${esc(msg)}</div>
+    </div>
+    <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+    <div class="toast-progress" style="animation-duration: ${duracao}ms"></div>
+  `;
+
+  container.appendChild(el);
+
+  const timer = setTimeout(() => {
+    el.classList.add('removing');
+    setTimeout(() => el.remove(), 300);
+  }, duracao);
+
+  el.querySelector('.toast-close').addEventListener('click', () => {
+    clearTimeout(timer);
+    el.classList.add('removing');
+    setTimeout(() => el.remove(), 300);
+  });
+}
+
+/* ---------- MODAL (substitui alert/confirm/prompt) ---------- */
+function modal({ titulo, mensagem, tipo = 'default', icone = null, campos = null, botoes = null }) {
+  return new Promise(resolve => {
+    const icons = {
+      success: '✓', error: '✕', warning: '⚠', info: 'ℹ', default: '•'
+    };
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+
+    const camposHtml = campos ? campos.map((c, i) => {
+      if (c.tipo === 'select') {
+        return `<label>${esc(c.label)}
+          <select data-idx="${i}">
+            ${c.opcoes.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('')}
+          </select>
+        </label>`;
+      }
+      return `<label>${esc(c.label)}
+        <input data-idx="${i}" type="${c.tipo || 'text'}"
+          value="${esc(c.valor || '')}" placeholder="${esc(c.placeholder || '')}">
+      </label>`;
+    }).join('') : '';
+
+    const botoesPadrao = botoes || [{ texto: 'OK', tipo: 'primary', valor: true }];
+    const botoesHtml = botoesPadrao.map((b, i) =>
+      `<button class="btn ${b.tipo || 'primary'}" data-btn="${i}">${esc(b.texto)}</button>`
+    ).join('');
+
+    backdrop.innerHTML = `
+      <div class="modal-box">
+        <div class="modal-header ${tipo}">
+          <div class="modal-icon">${icone || icons[tipo]}</div>
+          <h3>${esc(titulo || '')}</h3>
+        </div>
+        <div class="modal-body">
+          ${mensagem ? `<p style="margin:0 0 6px">${esc(mensagem)}</p>` : ''}
+          ${camposHtml}
+        </div>
+        <div class="modal-footer">${botoesHtml}</div>
+      </div>
+    `;
+
+    document.body.appendChild(backdrop);
+
+    const fechar = (resultado) => {
+      backdrop.classList.add('closing');
+      setTimeout(() => {
+        backdrop.remove();
+        resolve(resultado);
+      }, 250);
+    };
+
+    backdrop.querySelectorAll('[data-btn]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.dataset.btn);
+        const config = botoesPadrao[idx];
+
+        if (campos) {
+          const valores = [];
+          backdrop.querySelectorAll('[data-idx]').forEach(inp => {
+            valores[Number(inp.dataset.idx)] = inp.value;
+          });
+          fechar({ botao: config.valor, valores });
+        } else {
+          fechar(config.valor);
+        }
+      });
+    });
+
+    // Fechar clicando fora
+    backdrop.addEventListener('click', e => {
+      if (e.target === backdrop) fechar(null);
+    });
+
+    // Fechar com ESC
+    const esc = e => {
+      if (e.key === 'Escape') {
+        document.removeEventListener('keydown', esc);
+        fechar(null);
+      }
+    };
+    document.addEventListener('keydown', esc);
+
+    // Focar primeiro input
+    setTimeout(() => {
+      const primeiro = backdrop.querySelector('input, select');
+      if (primeiro) primeiro.focus();
+    }, 100);
+  });
+}
+
+/* ---------- HELPERS DE MODAL ---------- */
+const alertar = (titulo, mensagem, tipo = 'info') =>
+  modal({ titulo, mensagem, tipo, botoes: [{ texto: 'OK', tipo: 'primary', valor: true }] });
+
+const confirmar = (titulo, mensagem, tipo = 'warning') =>
+  modal({
+    titulo, mensagem, tipo,
+    botoes: [
+      { texto: 'Cancelar', tipo: 'ghost', valor: false },
+      { texto: 'Confirmar', tipo: 'primary', valor: true }
+    ]
+  });
+
+const pedirValores = (titulo, campos, tipo = 'info') =>
+  modal({
+    titulo, tipo, campos,
+    botoes: [
+      { texto: 'Cancelar', tipo: 'ghost', valor: false },
+      { texto: 'Guardar', tipo: 'primary', valor: true }
+    ]
+  });
+
+/* ---------- BOTÃO COM LOADING + RIPPLE ---------- */
+function setLoading(btn, ativo = true) {
+  if (!btn) return;
+  if (ativo) {
+    btn.dataset.textoOriginal = btn.innerHTML;
+    btn.classList.add('loading');
+    btn.disabled = true;
+  } else {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+    if (btn.dataset.textoOriginal) btn.innerHTML = btn.dataset.textoOriginal;
+  }
+}
+
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.btn, .small-btn, .action-btn');
+  if (!btn || btn.disabled) return;
+
+  const rect = btn.getBoundingClientRect();
+  const ripple = document.createElement('span');
+  const size = Math.max(rect.width, rect.height);
+  ripple.className = 'ripple';
+  ripple.style.width = ripple.style.height = size + 'px';
+  ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+  ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+  btn.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 600);
+});
+
 /* ============ HELPERS ============ */
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, m => (
